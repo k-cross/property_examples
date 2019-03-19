@@ -24,6 +24,22 @@ defmodule PbtTest do
     end
   end
 
+  property "collect example - statistics", [:verbose] do
+    forall bin <- binary() do
+      collect(is_binary(bin), to_range(10, byte_size(bin)))
+    end
+  end
+
+  property "aggregate example - statistics", [:verbose] do
+    suits = [:club, :diamond, :heart, :spade]
+
+    forall hand <- vector(5, {oneof(suits), choose(1, 13)}) do
+      aggregate(true, hand)
+    end
+  end
+
+  defp custom_generator(), do: oneof([range(1, 10), binary()])
+
   defp model_biggest(list), do: List.last(Enum.sort(list))
 
   defp is_ordered([a, b | t]) do
@@ -33,5 +49,10 @@ defmodule PbtTest do
   # anything with less than 2 elements is sorted.
   defp is_ordered(_) do
     true
+  end
+
+  defp to_range(m, n) do
+    base = div(n, m)
+    {base * m, (base + 1) * m}
   end
 end
