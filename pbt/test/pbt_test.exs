@@ -38,9 +38,65 @@ defmodule PbtTest do
     end
   end
 
-  defp custom_generator(), do: oneof([range(1, 10), binary()])
+  property "resize example", [:verbose] do
+    forall str <- sized(s, resize(s * 12, utf8())) do
+      collect(is_binary(str), to_range(10, String.length(str)))
+    end
+  end
+
+  property "let macro example" do
+    forall q <- queue() do
+      :queue.is_queue(q)
+    end
+  end
+
+  property "such_that macro example" do
+    forall n <- odd() do
+      is_integer(n)
+    end
+  end
+
+  property "frequency macro example" do
+    forall n <- text_like() do
+      is_binary(n)
+    end
+  end
+
+  ### Generator Examples
+
+  defp oneof_generator(), do: oneof([range(1, 10), binary()])
+
+  defp queue() do
+    let list <- list({term(), term()}) do
+      :queue.from_list(list)
+    end
+  end
+
+  defp odd() do
+    such_that(n <- integer(), when: Integer.mod(n, 2) == 1)
+  end
+
+  defp text_like() do
+    let l <-
+          list(
+            frequency([
+              {2, range(?A, ?Z)},
+              {80, range(?a, ?z)},
+              {10, ?\s},
+              {1, ?\n},
+              {1, oneof([?., ?,, ?!, ??, ?-])},
+              {1, range(?0, ?9)}
+            ])
+          ) do
+      to_string(l)
+    end
+  end
+
+  ### Model Function Examples
 
   defp model_biggest(list), do: List.last(Enum.sort(list))
+
+  ### Invariant Property Examples
 
   defp is_ordered([a, b | t]) do
     a <= b and is_ordered([b | t])
@@ -50,6 +106,8 @@ defmodule PbtTest do
   defp is_ordered(_) do
     true
   end
+
+  ### Staticstic Helpers
 
   defp to_range(m, n) do
     base = div(n, m)
